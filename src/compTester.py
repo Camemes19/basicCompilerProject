@@ -1,13 +1,21 @@
+import sys
+
 from lexer import *
+from parser import *
 from tokenType import TokenType
 
 def main():
-    source = "+- */123 9.8654\"This is a string\" IF+-123 foo*THEN/#testing comment\n >>= = !="
-    lexer = Lexer(source)
+    print("Basic Compiler")
 
-    token = lexer.getToken()
-    while token.type != TokenType.EOF:
-        print(token.type)
-        token = lexer.getToken()
+    if len(sys.argv) != 2:
+        sys.exit("Error: Compiler needs source file as argument.")
+    with open(sys.argv[1], 'r') as inputFile:
+        source = inputFile.read()
+
+    lexer = Lexer(source)
+    parser = Parser(lexer)
+
+    parser.program()
+    print("Source file successfully parsed.")
 
 main()
