@@ -2,6 +2,7 @@ import sys
 
 from lexer import *
 from parser import *
+from emitter import *
 from tokenType import TokenType
 
 def main():
@@ -13,9 +14,11 @@ def main():
         source = inputFile.read()
 
     lexer = Lexer(source)
-    parser = Parser(lexer)
+    emitter = Emitter("out.c")
+    parser = Parser(lexer, emitter)
 
     parser.program()
+    emitter.writeFile()
     print("Source file successfully parsed.")
 
 main()
