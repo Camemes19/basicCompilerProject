@@ -104,11 +104,13 @@ class Parser:
                 self.abort(f"Label {self.curToken.text} already exists")
             self.labelsDeclared.add(self.curToken.text)
 
+            self.emitter.emitLine(f"{self.curToken.text}:")
             self.match(TokenType.IDENT)
         elif self.checkToken(TokenType.GOTO):
             print("STATEMENT-GOTO")
             self.nextToken()
             self.labelsGotoed.add(self.curToken.text)
+            self.emitter.emitLine(f"goto {self.curToken.text};")
             self.match(TokenType.IDENT)
         elif self.checkToken(TokenType.LET):
             print("STATEMENT-LET")
@@ -116,17 +118,26 @@ class Parser:
 
             if self.curToken.text not in self.symbols:
                 self.symbols.add(self.curToken.text)
+                self.emitter.headerLine(f"float {self.curToken.text};")
 
+            self.emitter.emit(f"{self.curToken.text} = ")
             self.match(TokenType.IDENT)
             self.match(TokenType.EQ)
             self.expression()
+            self.emitter.emitLine(";")
         elif self.checkToken(TokenType.INPUT):
             print("STATEMENT-INPUT")
             self.nextToken()
 
             if self.curToken.text not in self.symbols:
                 self.symbols.add(self.curToken.text)
+                self.emitter.headerLine(f"float {self.curToken.text};")
 
+            self.emitter.emitLine(f"if(0 == scanf(\"%f\", &{self.curToken.text})) {{")
+            self.emitter.emitLine(f"{self.curToken.text} = 0;")
+            self.emitter.emit("scanf(\"%")
+            self.emitter.emitLine("*s\");")
+            self.emitter.emitLine("}")
             self.match(TokenType.IDENT)
         else:
             self.abort(f"Invalid statement at {self.curToken.text} ({self.curToken.type.name})")
@@ -138,12 +149,14 @@ class Parser:
         self.expression()
 
         if self.isComparisonOperator():
+            self.emitter.emit(self.curToken.text)
             self.nextToken()
             self.expression()
         else:
             self.abort(f"Expected comparison operator at: {self.curToken.text}, was type {self.curToken.type}")
 
         while self.isComparisonOperator():
+            self.emitter.emit(self.curToken.text)
             self.nextToken()
             self.expression()
 
@@ -155,6 +168,7 @@ class Parser:
         self.term()
 
         while self.checkToken(TokenType.PLUS) or self.checkToken(TokenType.MINUS):
+            self.emitter.emit(self.curToken.text)
             self.nextToken()
             self.term()
 
@@ -163,6 +177,7 @@ class Parser:
         self.unary()
 
         while self.checkToken(TokenType.ASTERISK) or self.checkToken(TokenType.SLASH):
+            self.emitter.emit(self.curToken.text)
             self.nextToken()
             self.unary()
 
@@ -170,6 +185,7 @@ class Parser:
         print("UNARY")
 
         if self.checkToken(TokenType.PLUS) or self.checkToken(TokenType.MINUS):
+            self.emitter.emit(self.curToken.text)
             self.nextToken()
         self.primary()
 
@@ -177,10 +193,12 @@ class Parser:
         print(f"PRIMARY ({self.curToken.text})")
 
         if self.checkToken(TokenType.NUMBER):
+            self.emitter.emit(self.curToken.text)
             self.nextToken()
         elif self.checkToken(TokenType.IDENT):
             if self.curToken.text not in self.symbols:
                 self.abort(f"Undeclared variable: {self.curToken.text}")
+            self.emitter.emit(self.curToken.text)
             self.nextToken()
         else:
             self.abort(f"Unexpected token at {self.curToken.text}")
